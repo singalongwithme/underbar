@@ -8,6 +8,7 @@ var _ = {};
   // seem very useful, but remember it--if a function needs to provide an
   // iterator when the user does not pass one in, this will be handy.
   _.identity = function(val) {
+    return val;
   };
 
   /**
@@ -104,7 +105,7 @@ var _ = {};
   _.uniq = function(array) {
     var empty = [];
     var sorted = array.sort();
-    for(var i = 0; i < array.length; i++){
+    for(var i = 0; i < sorted.length; i++){
       if(sorted[i + 1] !== sorted[i]){
         empty.push(sorted[i]);
       }
@@ -146,12 +147,17 @@ var _ = {};
   // Calls the method named by methodName on each value in the list.
   // Note: you will nead to learn a bit about .apply to complete this.
   _.invoke = function(collection, functionOrKey, args) {
-    var result = [];
-      for(var i = 0; i < collection.length; i++){
-      result.push(functionOrKey.apply(collection[i], collection));
+    var result = []
+    if (typeof functionOrKey === "string") {
+      _.each(collection, function(x){
+        result.push(x[functionOrKey](args));
+      })
+    } else {
+      _.each(collection, function(y){
+        result.push(functionOrKey.call(y, args));
+      })
     }
     return result;
-
   };
 
   // Reduces an array or object to a single value by repetitively calling
@@ -169,7 +175,7 @@ var _ = {};
   //   }, 0); // should be 6
   _.reduce = function(collection, iterator, accumulator) {
     var value = accumulator;
-    if(accumulator === undefined){
+    if(typeof accumulator === 'undefined'){
       value = collection[0];
     }
     for(var key in collection){
@@ -194,16 +200,22 @@ var _ = {};
   // Determine whether all of the elements match a truth test.
   _.every = function(collection, iterator) {
     // TIP: Try re-using reduce() here.
-    return _.reduce(collection, function(value) {
-      if(!value){
+    var result = _.reduce(collection, function(isTrue, item){
+      if (!isTrue) {
         return false;
-      }});
+      }
+      return typeof iterator === 'undefined' ? item : iterator(item);
+    }, true);
+     return result == true;
   };
 
   // Determine whether any of the elements pass a truth test. If no iterator is
   // provided, provide a default one
   _.some = function(collection, iterator) {
     // TIP: There's a very clever way to re-use every() here.
+      return !(_.every(collection, function(val){
+      return typeof iterator === 'undefined' ? !val : !iterator(val);
+    }));
   };
 
 
@@ -287,6 +299,13 @@ var _ = {};
   // already computed the result for the given argument and return that value
   // instead if possible.
   _.memoize = function(func) {
+     var results = {};
+     return function(arg){
+      if (results[arg] === undefined){
+        results[arg] = func(arg);
+      }
+      return results[arg];
+    };
   };
 
   // Delays a function for the given number of milliseconds, and then calls
